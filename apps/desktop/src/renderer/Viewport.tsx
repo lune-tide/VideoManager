@@ -1,4 +1,4 @@
-import { useEffect,useRef,useState,type MouseEvent } from 'react'
+import { memo,useEffect,useRef,useState,type MouseEvent } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Folder,Film,Image as ImageIcon,Star,Eye } from 'lucide-react'
@@ -7,7 +7,7 @@ import { Thumb,EntryMenu,SelectionMark,formatSize,formatTime,type EntryAction } 
 import { useNavigation } from './store'
 import {useDetailColumns} from './DetailColumns'
 
-export function Viewport({session,layout,cardWidth,fit,onAction,onOpen,onSelectionError}:{session:QuerySession;layout:string;cardWidth:number;fit:string;onAction:(action:EntryAction,e:Entry,index?:number)=>void;onOpen:(e:Entry,index:number)=>void;onSelectionError:(message:string)=>void}){
+export const Viewport=memo(function Viewport({session,layout,cardWidth,fit,onAction,onOpen,onSelectionError}:{session:QuerySession;layout:string;cardWidth:number;fit:string;onAction:(action:EntryAction,e:Entry,index?:number)=>void;onOpen:(e:Entry,index:number)=>void;onSelectionError:(message:string)=>void}){
  const [contextEntry,setContextEntry]=useState<{id:string;x:number;y:number}|null>(null);const scroll=useRef<HTMLDivElement>(null);const [width,setWidth]=useState(900);const selected=useNavigation(s=>s.selected);const snapshot=useNavigation(s=>s.snapshot);const query=useNavigation(s=>s.query);const select=useNavigation(s=>s.select);const lastIndex=useRef(0);const selectedRef=useRef(selected);selectedRef.current=selected
  const detail=useDetailColumns()
  const grid=layout==='grid';const columns=grid?Math.max(1,Math.floor((width-48+16)/(cardWidth+16))):1;const folderRows=Math.ceil(session.folders/columns);const mediaRows=Math.ceil(session.media/columns);const hasFolders=session.folders>0;const mediaStart=(hasFolders?folderRows+1:0);const rowCount=mediaStart+1+mediaRows;const itemWidth=(width-48-(columns-1)*16)/columns;const height=grid?Math.round(itemWidth/1.6)+74:48
@@ -42,4 +42,4 @@ export function Viewport({session,layout,cardWidth,fit,onAction,onOpen,onSelecti
   </div>
   {session.media===0&&<div className="inline-empty"><ImageIcon size={28}/><p>{query.text||query.favorite||query.tags.length?'当前条件下没有找到媒体':'当前目录暂无图片或视频'}</p>{session.folders>0&&<button className="text-button" onClick={()=>useNavigation.getState().setQuery({scope:'descendants'})}>查看全部子目录媒体 →</button>}</div>}
  </div>
-}
+})

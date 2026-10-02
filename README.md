@@ -7,7 +7,7 @@
   <p>
     <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?logo=windows11&logoColor=white" alt="Windows 10 / 11" />
     <img src="https://img.shields.io/badge/architecture-x64-4C8BF5" alt="x64" />
-    <img src="https://img.shields.io/badge/version-0.9.0-18A058" alt="Version 0.9.0" />
+    <img src="https://img.shields.io/badge/version-0.9.2-18A058" alt="Version 0.9.2" />
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--only-2EA44F" alt="GNU GPL v3.0" /></a>
     <img src="https://img.shields.io/badge/Electron-44-47848F?logo=electron&logoColor=white" alt="Electron 44" />
     <img src="https://img.shields.io/badge/privacy-local--first-7357C8" alt="Local first" />
@@ -30,6 +30,8 @@ VideoManager 是一款面向 Windows 的本地多媒体管理软件。它直接�
 ## 🌟 核心特性
 
 - **本地媒体库** — 直接纳管现有文件夹，媒体保留在原位置，无需导入副本。
+- **现代视觉界面** — 保留 AceternityUI 风格的静态主题渐变与柔和光晕，统一图标、中文字体、按钮与卡片层次；媒体网格和播放弹窗取消持续流光、大面积背景模糊及鼠标追踪，减少浏览和播放时的渲染负担，支持系统「减少动态」设置。
+- **多主题工坊** — 内置 7 组双色调主题预设（极光、深海、星云、暖阳、樱粉、翠野、石墨），支持标题栏快捷切换、方向键选择及自定义颜色；强调色与主要按钮文字自动适配深浅模式对比度，设置保存在当前媒体库中。
 - **图片与视频统一浏览** — 网格和详细列表两种布局，文件夹与直属媒体分区展示。
 - **高效索引** — 后台扫描、文件变化监听、任务进度显示和大列表虚拟化。
 - **多维搜索** — 支持按文件名、文件夹名、路径和标签搜索，并可组合类型、扩展名、大小、日期、时长及收藏状态筛选。
@@ -65,9 +67,29 @@ VideoManager 是一款面向 Windows 的本地多媒体管理软件。它直接�
 3. 应用将在后台建立索引；可在 **后台任务** 中查看扫描进度。
 4. 使用 **当前目录**、**包含子目录** 或 **整个媒体库** 切换浏览范围。
 
-### 主题颜色
+### 界面主题
 
-在 **设置与插件 → 外观与浏览 → 主题强调色** 中选择预设颜色，也可通过调色板或十六进制值自定义。颜色会自动适配深浅主题，并保存在当前媒体库中。
+应用内置 **7 组双色调主题预设**，两种方式随时切换：
+
+- **快捷切换**：点击标题栏调色板图标，即可预览并切换主题预设与深浅模式。
+- **主题工坊**：在 **设置与插件 → 外观与浏览 → 界面主题** 中选择预设，或通过调色板与十六进制值自定义强调色。
+
+点击 **自定义** 即可从当前预设开始编辑。颜色选择器和文本输入共享草稿，支持 `#RRGGBB` 与 `#RGB`；点击 **应用颜色** 或按 `Enter` 保存。无效输入会显示提示并保留已应用主题。选择预设或 **恢复默认** 会清除自定义色。
+
+每组主题拥有专属的静态渐变与光晕；自定义颜色会自动派生搭档渐变。所有颜色自动适配深浅主题并保存在当前媒体库中，重启后继续生效。
+
+### v0.9.2 更新
+
+- 修复首次点击自定义主题无效，以及颜色输入失焦与应用按钮竞争的问题。
+- 取消永久极光动画、卡片流光、全局鼠标聚光灯和播放弹窗背景模糊；移除逐字动画运行时，媒体网格避免因弹窗或任务状态改变重复渲染。
+- mpv 画面尺寸通过窗口、全屏与布局变化事件同步，取消逐帧尺寸轮询，保持原生画面与弹窗对齐。
+- 重整深浅色界面层次、主题预设卡片、颜色编辑区、字体、图标、焦点状态与播放器控件；保存外观设置时保持媒体查询与滚动位置。
+- 修复清理缩略图缓存与后台封面生成的写入竞争；清理期间的新预览请求会等待，手动封面对象继续保留。
+- 同机 44 项媒体样本、多选 12 项后，2 秒空闲主线程耗时由约 562 ms 降至 27 ms，持续动画由 17 个降至 0 个；该指标不包含 GPU 时间，也不代表所有媒体库与编码。
+
+![v0.9.2 深色主题设置](docs/screenshots/v0.9.2-theme-dark.png)
+
+完整功能回归、安装包校验及性能口径见 [v0.9.2 验收记录](docs/RELEASE_v0.9.2.md)。
 
 ### 选择视频播放器
 
@@ -204,7 +226,7 @@ Electron Main Process
 | 领域 | 技术 |
 | --- | --- |
 | 桌面运行时 | Electron 44 |
-| 用户界面 | React 19、Radix UI、Lucide、Zustand |
+| 用户界面 | React 19、Radix UI、Lucide、Zustand、CSS 主题变量与静态 Aceternity 风格 |
 | 构建工具 | TypeScript 7、Vite 6、electron-vite |
 | 查询与虚拟化 | TanStack Query、TanStack Virtual |
 | 数据存储 | SQLite、better-sqlite3、WAL |
@@ -290,12 +312,16 @@ npm test
 # 桌面端到端回归
 npm run test:e2e
 
+# v0.9.2 主题交互与持久化、桌面渲染与真实视频播放
+node scripts/verify-v092.mjs
+node scripts/ui-performance.mjs
+
 # 性能与跨盘操作
 npm run test:performance
 npm run test:cross-volume
 ```
 
-测试数据生成、最终安装包回归和性能口径详见 [`docs/DELIVERY_REPORT.md`](docs/DELIVERY_REPORT.md)。测试脚本只使用隔离样本目录，不应指向个人媒体库。
+当前版本的最终安装包回归和性能口径详见 [v0.9.2 验收记录](docs/RELEASE_v0.9.2.md)，历史测试数据生成说明见 [`docs/DELIVERY_REPORT.md`](docs/DELIVERY_REPORT.md)。测试脚本只使用隔离样本目录，不应指向个人媒体库。
 
 ---
 
@@ -304,6 +330,7 @@ npm run test:cross-volume
 - [产品需求文档（PRD）](docs/PRD.md)
 - [技术架构与实现设计（TRD）](docs/TRD.md)
 - [交付与验收记录](docs/DELIVERY_REPORT.md)
+- [v0.9.2 更新与验收记录](docs/RELEASE_v0.9.2.md)
 - [第三方组件与许可证说明](docs/THIRD-PARTY-NOTICES.md)
 
 ---

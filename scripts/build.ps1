@@ -15,5 +15,5 @@ $env:ELECTRON_BUILDER_CACHE = Join-Path $PWD '.cache\electron-builder'
 if ($LASTEXITCODE -ne 0) { throw 'Type check failed' }
 & $runtimeNode node_modules\electron-vite\bin\electron-vite.js build
 if ($LASTEXITCODE -ne 0) { throw 'Application build failed' }
-& $runtimeNode node_modules\electron-builder\cli.js --win nsis --x64
+& $runtimeNode node_modules\electron-builder\cli.js --win nsis --x64 --publish never
 if ($LASTEXITCODE -ne 0) { throw 'Windows packaging failed' }

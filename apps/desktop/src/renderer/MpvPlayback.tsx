@@ -10,11 +10,21 @@ export function MpvPlayback({entry,onCover,onLocate,notify,onMove,previous,next}
  const dragging=useRef(false),seekSequence=useRef(0),coverHandler=useRef<(time?:number)=>void>(()=>{})
  const getBounds=():MpvBounds=>{const rect=surface.current?.getBoundingClientRect(),scale=window.devicePixelRatio;return rect?{x:Math.max(0,Math.round(rect.x*scale)),y:Math.max(0,Math.round(rect.y*scale)),width:Math.max(0,Math.round(rect.width*scale)),height:Math.max(0,Math.round(rect.height*scale))}:{x:0,y:0,width:0,height:0}}
  useEffect(()=>{
-  let active=true,opened='',animation=0,lastBounds='',updating=false;session.current='';setState(null);setError('');setSeeking(null)
+  let active=true,opened='',animation=0,lastBounds='',updating=false,dirty=false;session.current='';setState(null);setError('');setSeeking(null)
   const unsubscribe=window.vm.onEvent(event=>{if(event.topic==='mpv-action'){const action=event.data as {sessionId:string;action:string;position?:number};if(active&&action.sessionId===session.current){if(action.action==='exit-fullscreen'&&document.fullscreenElement)void document.exitFullscreen().catch(error=>notify(String(error)));if(action.action==='cover')coverHandler.current(action.position)}}if(event.topic==='mpv-state'){const value=event.data as MpvState;if(active&&value.sessionId===session.current)setState(value)}})
-  const updateBounds=()=>{if(!active)return;const bounds=getBounds(),key=JSON.stringify(bounds);if(opened&&!updating&&key!==lastBounds){updating=true;void window.vm.mpvBounds(opened,bounds).then(()=>{lastBounds=key}).catch(()=>{}).finally(()=>{updating=false})}animation=requestAnimationFrame(updateBounds)}
-  void window.vm.startMpv(entry.id,getBounds()).then(value=>{opened=value.sessionId;if(active){session.current=opened;setState(value);animation=requestAnimationFrame(updateBounds)}else void window.vm.closeMpv(opened).catch(()=>{})}).catch(reason=>{if(active)setError(String(reason))})
-  return()=>{active=false;cancelAnimationFrame(animation);unsubscribe();if(opened){void window.vm.mpvBounds(opened,{x:0,y:0,width:0,height:0}).catch(()=>{});void window.vm.closeMpv(opened).catch(()=>{})}}
+  // Observe real layout changes instead of measuring the native surface every frame.
+  const schedule=()=>{dirty=true;if(active&&!animation)animation=requestAnimationFrame(updateBounds)}
+  const updateBounds=()=>{
+   animation=0;if(!active||!opened)return
+   if(updating){dirty=true;return}
+   dirty=false;const bounds=getBounds(),key=JSON.stringify(bounds);if(key===lastBounds)return
+   updating=true;void window.vm.mpvBounds(opened,bounds).then(()=>{lastBounds=key}).catch(()=>{}).finally(()=>{updating=false;if(active&&dirty)schedule()})
+  }
+  const resize=new ResizeObserver(schedule);if(surface.current)resize.observe(surface.current)
+  window.addEventListener('resize',schedule);window.addEventListener('scroll',schedule,true);document.addEventListener('fullscreenchange',schedule)
+  window.visualViewport?.addEventListener('resize',schedule);window.visualViewport?.addEventListener('scroll',schedule)
+  void window.vm.startMpv(entry.id,getBounds()).then(value=>{opened=value.sessionId;if(active){session.current=opened;setState(value);schedule()}else void window.vm.closeMpv(opened).catch(()=>{})}).catch(reason=>{if(active)setError(String(reason))})
+  return()=>{active=false;cancelAnimationFrame(animation);resize.disconnect();window.removeEventListener('resize',schedule);window.removeEventListener('scroll',schedule,true);document.removeEventListener('fullscreenchange',schedule);window.visualViewport?.removeEventListener('resize',schedule);window.visualViewport?.removeEventListener('scroll',schedule);unsubscribe();if(opened){void window.vm.mpvBounds(opened,{x:0,y:0,width:0,height:0}).catch(()=>{});void window.vm.closeMpv(opened).catch(()=>{})}}
  },[entry.id,attempt])
  const control=async(action:MpvAction,value?:number)=>{if(!session.current)return;try{await window.vm.mpvControl(session.current,action,value)}catch(error){notify(String(error))}}
  const full=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await container.current?.requestFullscreen()}catch(error){notify(String(error))}}
