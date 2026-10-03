@@ -165,6 +165,37 @@ export class LibraryDatabase {
   }
   ancestors(id: string) { const result: Entry[]=[]; let e: Entry | null=this.entry(id); for(let i=0;e && i<256;i++){result.unshift(e);e=e.parentId?this.entry(e.parentId):null} return result }
   children(id: string) { return (this.db.prepare("SELECT id FROM entries WHERE parentId=? AND kind='folder' AND state='present' ORDER BY sortKey LIMIT 500").pluck().all(id) as string[]).map(v=>this.entry(v)) }
+  private sharedScope(folderIds: string[]) {
+    if (!folderIds.length || folderIds.length > 64) throw Error('共享目录无效')
+    return `e.state='present' AND r.active=1 AND EXISTS(SELECT 1 FROM closure c WHERE c.ancestor IN (${folderIds.map(()=>'?').join(',')}) AND c.descendant=CASE WHEN e.kind='folder' THEN e.id ELSE e.parentId END)`
+  }
+  sharedEntry(folderIds: string[], id: string): Entry {
+    const row=this.db.prepare(`SELECT e.id FROM entries e JOIN roots r ON r.id=e.rootId WHERE ${this.sharedScope(folderIds)} AND e.id=?`).get(...folderIds,id)
+    if(!row)throw Error('SHARE_NOT_FOUND')
+    return this.entry(id)
+  }
+  sharedBrowse(folderIds: string[], input: import('../contracts/sharing').ShareBrowse): import('../contracts/sharing').SharedPage {
+    return this.db.transaction(()=>{
+    const clauses=[this.sharedScope(folderIds)];const params: unknown[]=[...folderIds]
+    let breadcrumbs: {id:string;name:string}[]=[]
+    if(input.folderId){
+      const folder=this.sharedEntry(folderIds,input.folderId);if(folder.kind!=='folder')throw Error('SHARE_NOT_FOUND')
+      const ancestors=this.ancestors(folder.id);const first=ancestors.findIndex(e=>folderIds.includes(e.id))
+      breadcrumbs=ancestors.slice(first).map(({id,name})=>({id,name}))
+      if(input.text){clauses.push("EXISTS(SELECT 1 FROM closure c WHERE c.ancestor=? AND c.depth>=CASE WHEN e.kind='folder' THEN 1 ELSE 0 END AND c.descendant=CASE WHEN e.kind='folder' THEN e.id ELSE e.parentId END)");params.push(folder.id)}
+      else{clauses.push('e.parentId=?');params.push(folder.id)}
+    }else if(!input.text&&!input.kind){clauses.push(`e.id IN (${folderIds.map(()=>'?').join(',')})`);params.push(...folderIds)}
+    for(const word of input.text.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean)){
+      clauses.push('(instr(lower(e.name),?)>0 OR EXISTS(SELECT 1 FROM entry_tags t WHERE t.entryId=e.id AND instr(lower(t.tag),?)>0))');params.push(word,word)
+    }
+    if(input.kind){clauses.push('e.kind=?');params.push(input.kind)}
+    const from=`FROM entries e JOIN roots r ON r.id=e.rootId WHERE ${clauses.join(' AND ')}`
+    const total=this.db.prepare(`SELECT count(*) ${from}`).pluck().get(...params) as number
+    const ids=this.db.prepare(`SELECT e.id ${from} ORDER BY (e.kind='folder') DESC,e.sortKey,e.id LIMIT ? OFFSET ?`).pluck().all(...params,input.limit,input.offset) as string[]
+    const entries=ids.map(id=>{const e=this.entry(id);return {id:e.id,name:e.name,kind:e.kind,ext:e.ext,size:e.size,mtime:e.mtime,width:e.width,height:e.height,duration:e.duration,revision:e.revision,coverRevision:e.coverRevision,tags:e.tags,online:!['offline','mismatch'].includes(e.rootState)}})
+    return {entries,total,breadcrumbs}
+    }).deferred()
+  }
   tags(): { name: string; count: number }[] { return this.db.prepare("SELECT tag AS name,count(*) AS count FROM entry_tags t JOIN entries e ON e.id=t.entryId JOIN roots r ON r.id=e.rootId WHERE r.active=1 GROUP BY tag ORDER BY tag").all() as { name: string; count: number }[] }
   openQuery(q: QuerySpec): QuerySession {
     const {where,params,order}=compileQuery(q); const id=randomUUID();const table='query_'+(++this.sessionCounter)

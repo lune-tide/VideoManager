@@ -87,6 +87,8 @@ try{
  await page.waitForFunction(()=>!document.fullscreenElement)
  await page.locator('.modal').getByRole('button',{name:'关闭',exact:true}).click()
  await assert.rejects(page.evaluate(id=>window.vm.mpvControl(id,'seek',1),playing.sessionId))
+ // Viewer cleanup submits close asynchronously; wait for the persisted position, not only the closed session event.
+ await page.waitForFunction(async id=>{const saved=await window.vm.entry(id);return saved.playback>=.8&&saved.playback<=1.2},playing.entryId,{timeout:10000})
  const saved=await page.evaluate(id=>window.vm.entry(id),playing.entryId)
  assert(saved.playback>=.8&&saved.playback<=1.2)
  report.mpvControls={seek:true,pause:true,speed:true,volume:true,resize:true,fullscreen:true,close:true,resumePosition:saved.playback}

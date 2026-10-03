@@ -1,6 +1,7 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
+import { cp } from 'node:fs/promises'
 
 // 仅原生模块保持 external（无法被 bundle），其余依赖全部打进产物，
 // 使打包后的 app.asar 无需携带全部 node_modules，显著缩小安装包体积。
@@ -10,7 +11,7 @@ const nativeOnly = externalizeDepsPlugin({ include: ['better-sqlite3', 'sharp'] 
 const cjs = { format: 'cjs' as const }
 
 export default defineConfig({
-  main: { plugins: [nativeOnly], build: { rollupOptions: { input: { index: resolve('apps/desktop/src/main/index.ts'), database: resolve('apps/desktop/src/workers/database.ts'), indexer: resolve('apps/desktop/src/workers/indexer.ts'), images: resolve('apps/desktop/src/workers/images.ts') }, output: cjs } } },
+  main: { plugins: [nativeOnly,{name:'sharing-web-assets',async closeBundle(){await cp(resolve('apps/desktop/src/sharing-web'),resolve('out/main/sharing-web'),{recursive:true})}}], build: { rollupOptions: { input: { index: resolve('apps/desktop/src/main/index.ts'), database: resolve('apps/desktop/src/workers/database.ts'), indexer: resolve('apps/desktop/src/workers/indexer.ts'), images: resolve('apps/desktop/src/workers/images.ts'), sharing: resolve('apps/desktop/src/workers/sharing.ts') }, output: cjs } } },
   preload: { plugins: [nativeOnly], build: { rollupOptions: { input: resolve('apps/desktop/src/preload/index.ts'), output: { format: 'cjs', entryFileNames: 'index.cjs' } } } },
   renderer: { root: 'apps/desktop/src/renderer', plugins: [react()], build: { minify: 'esbuild', sourcemap: false, rollupOptions: { input: resolve('apps/desktop/src/renderer/index.html') } } }
 })

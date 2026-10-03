@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { shareOptionsSchema, type ShareOptions, type ShareStatus } from './sharing'
 
 export type Kind = 'folder' | 'image' | 'video'
 export type Root = { id: string; name: string; path: string; entryId: string; state: string; identity: string; active: number; indexMode: 'manual' | 'scheduled'; intervalMinutes: number; lastIndexedAt: number }
@@ -57,6 +58,13 @@ export type MpvAction='toggle-pause'|'seek'|'speed'|'volume'|'fullscreen'|'audio
 export type MpvState={sessionId:string;entryId:string;status:'starting'|'ready'|'closed'|'error';position:number;duration:number;aspect:number;paused:boolean;speed:number;volume:number;fullscreen:boolean;error:string}
 
 export interface VMApi {
+  shareStatus(): Promise<ShareStatus>
+  shareCopyConnection(): Promise<void>
+  shareStart(options: ShareOptions): Promise<ShareStatus>
+  shareStop(): Promise<ShareStatus>
+  shareRevoke(deviceId: string): Promise<ShareStatus>
+  shareRenewQr(): Promise<ShareStatus>
+  shareFolders(id: string): Promise<{ id: string; name: string }[]>
   bootstrap(): Promise<Bootstrap>
   pickRoot(): Promise<{ grant: string; path: string; overlaps: string[] } | null>
   addRoot(grant: string): Promise<Root>
@@ -124,6 +132,8 @@ const id = z.string().min(1).max(200)
 const selection = z.union([z.object({ ids: z.array(id).min(1).max(10000) }), z.object({ snapshotId: id })])
 export const cropSchema = z.object({ mode: z.enum(['cover', 'contain']), x: z.number().min(0).max(1), y: z.number().min(0).max(1), zoom: z.number().min(1).max(4) })
 export const ipcSchemas = {
+  shareStatus: z.tuple([]), shareCopyConnection: z.tuple([]), shareStart: z.tuple([shareOptionsSchema]), shareStop: z.tuple([]),
+  shareRevoke: z.tuple([id]), shareRenewQr: z.tuple([]), shareFolders: z.tuple([id]),
   bootstrap: z.tuple([]), pickRoot: z.tuple([]), addRoot: z.tuple([id]), removeRoot: z.tuple([id]), refreshRoot: z.tuple([id]),
   setRootIndexing: z.tuple([id, z.enum(['manual','scheduled']), z.number().int().min(1).max(10080)]),
   rebindPreview: z.tuple([id]), rebindRoot: z.tuple([id, id]), openQuery: z.tuple([querySchema]),

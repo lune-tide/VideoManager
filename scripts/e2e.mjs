@@ -14,7 +14,7 @@ async function launch(){application=await electron.launch({executablePath:path.r
 try{
  await launch()
  if(process.env.VM_TEST_EXECUTABLE){await application.evaluate(({dialog},source)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[source]})},source);const picked=await api('pickRoot');await api('addRoot',picked.grant)}
- const bootstrap=await waitFor(async()=>{const b=await api('bootstrap');return b.roots.length&&b.roots[0].state==='online'?b:null},'initial scan');const root=bootstrap.roots[0]
+ const bootstrap=await waitFor(async()=>{const b=await api('bootstrap');return b.roots.length&&b.roots[0].state==='online'&&b.roots[0].lastIndexedAt>0?b:null},'initial scan');const root=bootstrap.roots[0]
  log('Windows 启动、沙箱桥接、目录扫描',{rootState:root.state});assert.equal(await page.evaluate(()=>typeof window.require),'undefined')
  await page.locator('.tree-target').filter({hasText:'影像测试库'}).first().click()
  const direct=await api('openQuery',{...defaultQuery,folderId:root.entryId,scope:'direct'});const page1=await api('page',direct.id,0,100);assert.equal(direct.folders,5);assert.equal(direct.media,21);assert.equal((await api('entry',root.entryId)).other,1);log('直属目录与媒体分区',{folders:direct.folders,media:direct.media})

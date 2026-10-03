@@ -6,6 +6,16 @@ VideoManager 使用 Electron (MIT)、React (MIT)、Cordis (MIT)、SQLite (公有
 
 测试媒体由 scripts/fixtures.mjs 生成，不使用用户实际收藏。测试编码器仅用于本机生成样本，不随应用分发。
 
+## 二维码生成
+
+局域网访问二维码使用 qrcode-generator 2.0.4（MIT），Copyright (c) 2009 Kazuhiko Arase，来源 https://github.com/kazuhikoarase/qrcode-generator 。代码随共享进程打包，在本机生成 SVG，不访问外部二维码服务。
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 本交付为未签名的开发验收构建。公开分发前须按锁定二进制的配置归档对应源码、构建脚本及全部依赖许可，并完成发行审查与代码签名。
 
 ## mpv 播放器
